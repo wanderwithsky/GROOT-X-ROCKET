@@ -1,64 +1,109 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePWAInstall } from '../hooks/usePWAInstall';
+import { X, Share } from 'lucide-react';
 
 export const InstallPrompt = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const { state, promptInstall, dismissInstall } = usePWAInstall();
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
-  useEffect(() => {
-    // Check if already installed or dismissed
-    if (window.matchMedia('(display-mode: standalone)').matches || localStorage.getItem('bakchodi_install_dismissed')) {
-      return;
+  // Smart Display Logic
+  const shouldShowBanner = state.isMobile && !state.isInstalled && state.canInstall && !state.isDismissed;
+
+  const handleInstallClick = async () => {
+    if (state.isIOS) {
+      setShowIOSInstructions(true);
+    } else {
+      await promptInstall();
     }
-
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowPrompt(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-  }, []);
-
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-      setShowPrompt(false);
-    }
-  };
-
-  const handleDismiss = () => {
-    localStorage.setItem('bakchodi_install_dismissed', 'true');
-    setShowPrompt(false);
   };
 
   return (
-    <AnimatePresence>
-      {showPrompt && (
-        <motion.div 
-          initial={{ y: 100, opacity: 0 }} 
-          animate={{ y: 0, opacity: 1 }} 
-          exit={{ y: 100, opacity: 0 }} 
-          className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-8 bg-[#111113] border-t border-zinc-800 rounded-t-3xl shadow-2xl"
-        >
-          <div className="max-w-md mx-auto text-center">
-            <h3 className="text-xl font-bold text-zinc-100 mb-2">🚀 Install Bakchodi</h3>
-            <p className="text-sm text-zinc-400 mb-6">Keep Groot × Rocket one tap away. Install the app for the full experience.</p>
-            <div className="flex gap-4 justify-center">
-              <button onClick={handleDismiss} className="px-6 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium hover:bg-zinc-700 transition-colors">
-                Not now
-              </button>
-              <button onClick={handleInstall} className="px-6 py-3 rounded-xl bg-zinc-100 text-black font-bold hover:bg-white transition-colors">
-                Install Bakchodi
+    <>
+      <AnimatePresence>
+        {shouldShowBanner && (
+          <motion.div
+            initial={{ y: '-100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '-100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top)] bg-[var(--theme-card)] border-b border-[var(--theme-border)] shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+          >
+            <div className="flex items-center justify-between p-4 max-w-md mx-auto relative">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[var(--theme-card-secondary)] border border-[var(--theme-border)] rounded-xl flex items-center justify-center overflow-hidden">
+                  <span className="text-xl">🚀</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[var(--theme-text)] text-sm">Install Bakchodi</h3>
+                  <p className="text-xs text-[var(--theme-text-muted)]">Keep Groot × Rocket one tap away.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={handleInstallClick} 
+                  className="px-3 py-1.5 bg-[var(--theme-accent)] text-white text-xs font-bold rounded-lg hover:opacity-80 transition-colors"
+                  aria-label="Install Bakchodi"
+                >
+                  INSTALL
+                </button>
+                <button 
+                  onClick={dismissInstall} 
+                  className="p-1.5 text-[var(--theme-text-muted)] hover:text-zinc-300 transition-colors"
+                  aria-label="Close install banner"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* iOS Instructions Bottom Sheet */}
+      <AnimatePresence>
+        {showIOSInstructions && (
+          <motion.div 
+            initial={{ y: '100%' }} 
+            animate={{ y: 0 }} 
+            exit={{ y: '100%' }}
+            className="fixed bottom-0 left-0 right-0 z-[60] p-6 pb-safe bg-[var(--theme-card)] border-t border-[var(--theme-border)] rounded-t-3xl shadow-2xl"
+          >
+            <div className="max-w-md mx-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold text-[var(--theme-text)]">Install Bakchodi on iPhone</h3>
+                <button onClick={() => setShowIOSInstructions(false)} className="p-2 text-[var(--theme-text-muted)] hover:text-zinc-300">
+                  <X size={20} />
+                </button>
+              </div>
+              <ol className="space-y-4 text-sm text-zinc-300 mb-6">
+                <li className="flex items-center gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs">1</span>
+                  <span>Tap the <Share size={16} className="inline mx-1 text-blue-400" /> <b>Share</b> button in Safari.</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs">2</span>
+                  <span>Scroll down the menu.</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs">3</span>
+                  <span>Tap <b>Add to Home Screen</b>.</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs">4</span>
+                  <span>Tap <b>Add</b> in the top right.</span>
+                </li>
+              </ol>
+              <button 
+                onClick={() => setShowIOSInstructions(false)} 
+                className="w-full py-3 bg-zinc-800 text-[var(--theme-text)] font-bold rounded-xl hover:bg-zinc-700 transition-colors"
+              >
+                Got it
               </button>
             </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };

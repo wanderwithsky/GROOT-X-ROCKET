@@ -21,14 +21,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) fetchProfile(session.user);
       else setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) fetchProfile(session.user);
       else {
         setProfile(null);
         setLoading(false);
@@ -38,10 +38,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    setProfile(data);
-    setLoading(false);
+  const fetchProfile = async (user: User) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setLoading(false);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+      } else {
+        // Profile doesn't exist, create it
+        const isGroot = user.email?.toLowerCase().includes('groot');
+        
+        const newProfile = {
+          id: user.id,
+          username: isGroot ? 'groot' : 'rocket',
+          display_name: isGroot ? 'Groot' : 'Rocket',
+          role: isGroot ? 'admin' : 'user',
+          theme_preference: 'midnight',
+          bio: 'Setting up my profile...'
+        };
+
+        const { data: createdProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert(newProfile)
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+        } else {
+          setProfile(createdProfile);
+        }
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching profile:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return <AuthContext.Provider value={{ session, user, profile, loading }}>{children}</AuthContext.Provider>;
