@@ -22,27 +22,65 @@ export const EditProfile = () => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
     
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image is too large. Please choose an image under 10 MB.');
+    // File validation
+    if (!file.type.startsWith('image/')) {
+      setError('This file type is not supported. Please select an image.');
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be smaller than 5 MB.');
       return;
     }
 
     try {
       setIsSaving(true);
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${profile.id}/${Math.random()}.${fileExt}`;
+      setError('');
       
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
-      if (uploadError) throw uploadError;
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const filePath = `${profile.id}/avatar-${Date.now()}.${fileExt}`;
+      
+      console.log('Attempting upload:', {
+        bucket: 'avatars',
+        filePath,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        userId: profile.id,
+      });
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        console.error('Avatar upload failed:', uploadError);
+        throw new Error('Photo upload failed. Please try again.');
+      }
 
       const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      setAvatarUrl(data.publicUrl);
       
-      await supabase.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', profile.id);
-    } catch (err) {
-      setError('Couldn\'t update your profile photo. Try again.');
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: data.publicUrl })
+        .eq('id', profile.id);
+        
+      if (profileError) {
+        console.error('Profile update failed:', profileError);
+        throw new Error('Photo uploaded, but profile update failed.');
+      }
+
+      setAvatarUrl(data.publicUrl);
+    } catch (err: any) {
+      console.error('Upload flow error:', err);
+      setError(err.message || 'Couldn\'t update your profile photo. Try again.');
     } finally {
       setIsSaving(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
