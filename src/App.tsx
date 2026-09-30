@@ -44,8 +44,8 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <AppRoutes />
         <InstallPrompt />
+        <AppRoutes />
       </ThemeProvider>
     </AuthProvider>
   );

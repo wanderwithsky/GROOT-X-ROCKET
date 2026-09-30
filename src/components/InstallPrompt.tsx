@@ -23,16 +23,16 @@ export const InstallPrompt = () => {
       <AnimatePresence>
         {shouldShowBanner && (
           <motion.div
-            initial={{ y: '-100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '-100%', opacity: 0 }}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top)] bg-[var(--theme-card)] border-b border-[var(--theme-border)] shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+            className="sticky top-0 w-full z-50 pt-[env(safe-area-inset-top)] bg-[var(--theme-card)] border-b border-[var(--theme-border)] shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden"
           >
             <div className="flex items-center justify-between p-4 max-w-md mx-auto relative">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[var(--theme-card-secondary)] border border-[var(--theme-border)] rounded-xl flex items-center justify-center overflow-hidden">
-                  <span className="text-xl">🚀</span>
+                  <img src="/avatars/groot-x-rocket.png" alt="Bakchodi" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h3 className="font-bold text-[var(--theme-text)] text-sm">Install Bakchodi</h3>

@@ -19,12 +19,12 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: '/avatars/groot-x-rocket.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: '/avatars/groot-x-rocket.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'

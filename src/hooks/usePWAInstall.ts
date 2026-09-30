@@ -22,7 +22,7 @@ export const usePWAInstall = () => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const dismissed = localStorage.getItem('bakchodi_install_dismissed') === 'true';
+    const dismissed = sessionStorage.getItem('bakchodi_install_dismissed') === 'true';
 
     setState(prev => ({
       ...prev,
@@ -59,7 +59,7 @@ export const usePWAInstall = () => {
   };
 
   const dismissInstall = () => {
-    localStorage.setItem('bakchodi_install_dismissed', 'true');
+    sessionStorage.setItem('bakchodi_install_dismissed', 'true');
     setState(prev => ({ ...prev, isDismissed: true }));
   };
 
