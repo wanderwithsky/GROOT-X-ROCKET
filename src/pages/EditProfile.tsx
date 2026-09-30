@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Loader2 } from 'lucide-react';
 
 export const EditProfile = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,12 +49,14 @@ export const EditProfile = () => {
         userId: profile.id,
       });
 
+      const contentType = file.type === 'image/jfif' ? 'image/jpeg' : file.type || 'image/jpeg';
+
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true,
-          contentType: file.type,
+          contentType: contentType,
         });
 
       if (uploadError) {
@@ -75,6 +77,7 @@ export const EditProfile = () => {
       }
 
       setAvatarUrl(data.publicUrl);
+      refreshProfile();
     } catch (err: any) {
       console.error('Upload flow error:', err);
       setError(err.message || 'Couldn\'t update your profile photo. Try again.');
@@ -96,6 +99,7 @@ export const EditProfile = () => {
       }).eq('id', profile.id);
       
       if (dbError) throw dbError;
+      refreshProfile();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2000);
     } catch (err: any) {

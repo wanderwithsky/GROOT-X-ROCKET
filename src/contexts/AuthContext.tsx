@@ -7,9 +7,10 @@ type AuthContextType = {
   user: User | null;
   profile: any | null;
   loading: boolean;
+  refreshProfile: () => void;
 };
 
-const AuthContext = createContext<AuthContextType>({ session: null, user: null, profile: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ session: null, user: null, profile: null, loading: true, refreshProfile: () => {} });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -86,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  return <AuthContext.Provider value={{ session, user, profile, loading }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ session, user, profile, loading, refreshProfile: () => user && fetchProfile(user) }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);
