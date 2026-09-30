@@ -16,18 +16,29 @@ export default defineConfig({
         short_name: 'Bakchodi',
         description: 'Two idiots. One timeline. Infinite bakchodi.',
         theme_color: '#09090b',
+        start_url: '/',
+        scope: '/',
         display: 'standalone',
+        orientation: 'portrait-primary',
+        background_color: '#09090b',
         icons: [
           {
             src: '/avatars/groot-x-rocket.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: '/avatars/groot-x-rocket.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: '/avatars/groot-x-rocket.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       }

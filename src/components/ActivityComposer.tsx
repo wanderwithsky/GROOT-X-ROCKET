@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, Image as ImageIcon, Loader2, Camera } from 'lucide-react';
 
 export type ActivityType = 'photo' | 'text' | 'meal' | 'gym' | 'custom' | null;
 
@@ -18,7 +18,8 @@ export const ActivityComposer = ({ type, onClose }: Props) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const titles: Record<string, string> = {
     photo: 'Post a Photo',
@@ -31,10 +32,19 @@ export const ActivityComposer = ({ type, onClose }: Props) => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   const handlePost = async () => {
     if (!profile) return;
@@ -127,32 +137,65 @@ export const ActivityComposer = ({ type, onClose }: Props) => {
             {imagePreview && (
               <div className="relative mt-4 rounded-xl overflow-hidden border border-[var(--theme-border)]">
                 <img src={imagePreview} alt="Preview" className="w-full h-auto object-cover max-h-64" />
-                <button 
-                  onClick={() => { setImageFile(null); setImagePreview(null); }}
-                  className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white backdrop-blur-sm hover:bg-black/70"
-                >
-                  <X size={16} />
-                </button>
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="px-3 py-1 bg-black/60 rounded-full text-white text-xs font-bold backdrop-blur-sm hover:bg-black/80"
+                  >
+                    Retake
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => { setImageFile(null); setImagePreview(null); }}
+                    className="p-1.5 bg-black/60 rounded-full text-white backdrop-blur-sm hover:bg-black/80"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
               </div>
             )}
 
             {error && <p className="text-red-400 text-sm mt-4 p-3 bg-red-900/20 rounded-xl">{error}</p>}
           </div>
 
-          <div className="p-4 border-t border-[var(--theme-border)] flex items-center justify-between pb-safe">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*" 
-              onChange={handleImageSelect}
-            />
-            <button 
-              onClick={() => fileInputRef.current?.click()} 
-              className="p-3 text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] hover:bg-zinc-800 rounded-full transition-colors"
-            >
-              <ImageIcon size={22} />
-            </button>
+          <div className="p-4 border-t border-[var(--theme-border)] flex flex-col gap-4 pb-safe">
+            <div className="flex gap-4 border-b border-[var(--theme-border)] pb-4">
+              <input 
+                type="file" 
+                ref={cameraInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                capture="environment"
+                onChange={handleImageSelect}
+              />
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--theme-card-secondary)] hover:bg-zinc-800 border border-[var(--theme-border)] rounded-xl text-sm font-medium transition-colors"
+                aria-label="Open camera"
+              >
+                <Camera size={18} /> Camera
+              </button>
+
+              <input 
+                type="file" 
+                ref={galleryInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleImageSelect}
+              />
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--theme-card-secondary)] hover:bg-zinc-800 border border-[var(--theme-border)] rounded-xl text-sm font-medium transition-colors"
+                aria-label="Open gallery"
+              >
+                <ImageIcon size={18} /> Gallery
+              </button>
+            </div>
+            
+            <div className="flex justify-end">
             <button 
               onClick={handlePost} 
               disabled={isUploading}
@@ -160,6 +203,7 @@ export const ActivityComposer = ({ type, onClose }: Props) => {
             >
               {isUploading ? <><Loader2 size={18} className="animate-spin"/> Posting</> : 'Post'}
             </button>
+            </div>
           </div>
         </motion.div>
       </motion.div>
