@@ -22,8 +22,8 @@ export async function uploadImage({
   }
 
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-  const prefix = folder ? `${folder}/` : '';
-  const filePath = `${prefix}${userId}/image-${Date.now()}.${fileExt}`;
+  const subFolder = folder ? `/${folder}` : '';
+  const filePath = `${userId}${subFolder}/image-${Date.now()}.${fileExt}`;
 
   const contentType = file.type === 'image/jfif' ? 'image/jpeg' : file.type || 'image/jpeg';
 
