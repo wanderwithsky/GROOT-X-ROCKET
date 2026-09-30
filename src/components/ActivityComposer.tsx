@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { X, Image as ImageIcon, Loader2, Camera } from 'lucide-react';
+import { uploadImage } from '../lib/storage';
 
 export type ActivityType = 'photo' | 'text' | 'meal' | 'gym' | 'custom' | null;
 
@@ -61,24 +62,14 @@ export const ActivityComposer = ({ type, onClose }: Props) => {
       let imagePath = null;
 
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${profile.id}/${fileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('activity-images') // Assuming this bucket exists
-          .upload(filePath, imageFile);
-
-        if (uploadError) {
-          throw new Error('Photo upload failed. Try again.');
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('activity-images')
-          .getPublicUrl(filePath);
-
-        imageUrl = publicUrl;
-        imagePath = filePath;
+        const { url, path } = await uploadImage({
+          file: imageFile,
+          userId: profile.id,
+          bucket: 'avatars',
+          folder: 'activities',
+        });
+        imageUrl = url;
+        imagePath = path;
       }
 
       const { error: dbError } = await supabase.from('activities').insert({

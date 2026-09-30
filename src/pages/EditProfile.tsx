@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Loader2 } from 'lucide-react';
+import { uploadImage } from '../lib/storage';
 
 export const EditProfile = () => {
   const { profile, refreshProfile } = useAuth();
@@ -37,38 +38,15 @@ export const EditProfile = () => {
       setIsSaving(true);
       setError('');
       
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const filePath = `${profile.id}/avatar-${Date.now()}.${fileExt}`;
-      
-      console.log('Attempting upload:', {
-        bucket: 'avatars',
-        filePath,
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: file.size,
+      const { url: publicUrl } = await uploadImage({
+        file,
         userId: profile.id,
+        bucket: 'avatars',
       });
-
-      const contentType = file.type === 'image/jfif' ? 'image/jpeg' : file.type || 'image/jpeg';
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: contentType,
-        });
-
-      if (uploadError) {
-        console.error('Avatar upload failed:', uploadError);
-        throw new Error('Photo upload failed. Please try again.');
-      }
-
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
       
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ avatar_url: data.publicUrl })
+        .update({ avatar_url: publicUrl })
         .eq('id', profile.id);
         
       if (profileError) {
@@ -76,7 +54,7 @@ export const EditProfile = () => {
         throw new Error('Photo uploaded, but profile update failed.');
       }
 
-      setAvatarUrl(data.publicUrl);
+      setAvatarUrl(publicUrl);
       refreshProfile();
     } catch (err: any) {
       console.error('Upload flow error:', err);
